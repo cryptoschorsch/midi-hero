@@ -46,7 +46,7 @@ function PlayPageInner() {
   const midi = useMidi();
 
   const SCORE_BAR_HEIGHT = 52;
-  const KEYBOARD_VISUAL_HEIGHT = 80;
+  const KEYBOARD_VISUAL_HEIGHT = 130;
   const gameAreaHeight = Math.max(300, containerSize.height - SCORE_BAR_HEIGHT - KEYBOARD_VISUAL_HEIGHT);
 
   const {
