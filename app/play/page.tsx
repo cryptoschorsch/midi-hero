@@ -37,17 +37,17 @@ function PlayPageInner() {
   const [song, setSong] = useState<Song | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [containerWidth, setContainerWidth] = useState(1024);
-  const [gameAreaHeight, setGameAreaHeight] = useState(500);
+  const [containerSize, setContainerSize] = useState({ width: 1024, height: 600 });
   const [activeKeys, setActiveKeys] = useState<Set<number>>(new Set());
   const [expectedKeys, setExpectedKeys] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
-  const gameAreaRef = useRef<HTMLDivElement>(null);
 
   const { initAudio, playSound, changeInstrument, instrument: currentInstrument } = useAudio();
   const midi = useMidi();
 
+  const SCORE_BAR_HEIGHT = 52;
   const KEYBOARD_VISUAL_HEIGHT = 80;
+  const gameAreaHeight = Math.max(300, containerSize.height - SCORE_BAR_HEIGHT - KEYBOARD_VISUAL_HEIGHT);
 
   const {
     gameState,
@@ -61,7 +61,7 @@ function PlayPageInner() {
     stopGame,
     handleMidiInput,
   } = useGameEngine({
-    canvasWidth: containerWidth,
+    canvasWidth: containerSize.width,
     canvasHeight: gameAreaHeight,
     difficulty,
     practiceSpeed: settings.practiceSpeed,
@@ -78,23 +78,16 @@ function PlayPageInner() {
     setSettings((s) => ({ ...s, scrollSpeed: DIFFICULTY_PRESETS[songDifficulty].scrollSpeed }));
   }, [songId]);
 
-  // Container-Breite beobachten (für Keyboard-Visual-Breiten)
+  // Größe sofort beim Mount lesen + danach per ResizeObserver aktuell halten
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    // Sofortige Messung vor dem ersten Paint
+    const { width, height } = el.getBoundingClientRect();
+    if (height > 0) setContainerSize({ width: Math.max(800, width), height: Math.max(400, height) });
     const obs = new ResizeObserver((entries) => {
-      setContainerWidth(Math.max(800, entries[0].contentRect.width));
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  // Spielbereich-Höhe direkt vom Div beobachten → Canvas passt immer exakt
-  useEffect(() => {
-    const el = gameAreaRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver((entries) => {
-      setGameAreaHeight(Math.max(300, entries[0].contentRect.height));
+      const r = entries[0].contentRect;
+      setContainerSize({ width: Math.max(800, r.width), height: Math.max(400, r.height) });
     });
     obs.observe(el);
     return () => obs.disconnect();
@@ -177,10 +170,10 @@ function PlayPageInner() {
       {/* Score bar */}
       <ScoreDisplay score={score} />
 
-      {/* Game area – flex-1 damit es genau den verbleibenden Platz füllt */}
-      <div className="relative flex-1" ref={gameAreaRef}>
+      {/* Game area – explizite Höhe, kein flex-1 um Lücken zu vermeiden */}
+      <div className="relative" style={{ height: gameAreaHeight }}>
         <GameCanvas
-          width={containerWidth}
+          width={containerSize.width}
           height={gameAreaHeight}
           activeNotes={activeNotes}
           hitEffects={hitEffects}
@@ -279,7 +272,7 @@ function PlayPageInner() {
       <div className="flex" style={{ height: KEYBOARD_VISUAL_HEIGHT }}>
         {song.mode !== 'pads' && (
           <KeyboardVisual
-            width={song.mode === 'mixed' ? containerWidth * 0.65 : containerWidth}
+            width={song.mode === 'mixed' ? containerSize.width * 0.65 : containerSize.width}
             height={KEYBOARD_VISUAL_HEIGHT}
             activeNotes={activeKeys}
             expectedNotes={keyboardExpected}
@@ -288,7 +281,7 @@ function PlayPageInner() {
         )}
         {song.mode !== 'keyboard' && (
           <PadVisual
-            width={song.mode === 'mixed' ? containerWidth * 0.35 : containerWidth}
+            width={song.mode === 'mixed' ? containerSize.width * 0.35 : containerSize.width}
             height={KEYBOARD_VISUAL_HEIGHT}
             activePads={activeKeys}
             expectedPads={padExpected}
