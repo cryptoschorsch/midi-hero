@@ -125,7 +125,11 @@ function PlayPageInner() {
 
   const handleStart = async () => {
     if (!song) return;
-    await initAudio();
+    try {
+      await initAudio();
+    } catch (e) {
+      console.warn('Audio init failed, starting without audio:', e);
+    }
     startGame(song);
   };
 

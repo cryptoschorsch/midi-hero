@@ -22,7 +22,7 @@ export function GameOverlay({
   onRestart,
   onExit,
 }: GameOverlayProps) {
-  if (gameState === 'playing') return null;
+  if (gameState === 'playing' || gameState === 'menu') return null;
 
   return (
     <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/70 backdrop-blur-sm">

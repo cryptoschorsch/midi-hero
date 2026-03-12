@@ -164,5 +164,4 @@ export function stopNote(note: number, instrument?: ToneInstrument): void {
 
 export async function startAudioContext(): Promise<void> {
   await Tone.start();
-  Tone.getContext().latencyHint = 'playback';
 }
