@@ -1,6 +1,6 @@
 import type { NoteEvent, ActiveNote, GameScore, HitRating, MidiNoteEvent, GameSettings } from '@/types';
 import { buildActiveNote, updateNotePosition, isNoteVisible, hasNotePassed, type HighwayConfig } from './noteScheduler';
-import { getRating, updateScore, initialScore, finalizeScore } from './scoring';
+import { getRating, updateScore, initialScore, finalizeScore, calculateAccuracy, calculateGrade } from './scoring';
 import { DIFFICULTY_PRESETS } from './difficulty';
 import type { DifficultyPreset, Difficulty } from '@/types';
 import {
@@ -163,7 +163,9 @@ export class GameEngine {
       if (!note.hit && !note.missed && hasNotePassed(note, this.config.hitZoneY, goodWindow, this.config.scrollSpeed)) {
         note.missed = true;
         note.rating = 'miss';
-        this.score = updateScore(this.score, 'miss');
+        const missedScore = updateScore(this.score, 'miss');
+        const missedAcc = calculateAccuracy(missedScore);
+        this.score = { ...missedScore, accuracy: missedAcc, grade: calculateGrade(missedAcc) };
         this.callbacks.onMiss?.(note);
       }
     }
@@ -222,7 +224,9 @@ export class GameEngine {
 
     closest.hit = true;
     closest.rating = rating;
-    this.score = updateScore(this.score, rating);
+    const hitScore = updateScore(this.score, rating);
+    const hitAcc = calculateAccuracy(hitScore);
+    this.score = { ...hitScore, accuracy: hitAcc, grade: calculateGrade(hitAcc) };
 
     // Play sound
     this.callbacks.playSound?.(note, velocity, closest.noteEvent.duration, source);
