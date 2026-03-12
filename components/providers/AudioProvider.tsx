@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { InstrumentType } from '@/types';
 import {
   createInstrument,
@@ -40,16 +40,18 @@ export const AudioContext = createContext<AudioContextValue>({
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
+  const isReadyRef = useRef(false);
   const [instrument, setInstrument] = useState<InstrumentType>('piano');
   const [volume, setVolume] = useState(0.8);
 
   const initAudio = useCallback(async () => {
-    if (isReady) return;
+    if (isReadyRef.current) return;
     await startAudioContext();
     createInstrument(instrument);
     initDrumKit();
+    isReadyRef.current = true;
     setIsReady(true);
-  }, [isReady, instrument]);
+  }, [instrument]);
 
   const changeInstrument = useCallback((type: InstrumentType) => {
     setInstrument(type);
@@ -64,19 +66,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playKeyboardNote = useCallback((note: number, velocity: number, duration: number) => {
-    if (!isReady) return;
+    if (!isReadyRef.current) return;
     playNote(note, velocity, duration);
-  }, [isReady]);
+  }, []);
 
   const playPadNote = useCallback((note: number, velocity: number) => {
-    if (!isReady) return;
+    if (!isReadyRef.current) return;
     triggerDrum(note, velocity);
-  }, [isReady]);
+  }, []);
 
   const stopKeyboardNote = useCallback((note: number) => {
-    if (!isReady) return;
+    if (!isReadyRef.current) return;
     stopNote(note);
-  }, [isReady]);
+  }, []);
 
   const playSound = useCallback((note: number, velocity: number, duration: number, source: 'keyboard' | 'pad') => {
     if (source === 'pad') {

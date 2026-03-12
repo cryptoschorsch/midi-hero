@@ -36,6 +36,8 @@ export function useGameEngine({
   const engineRef = useRef<GameEngine | null>(null);
   const renderRafRef = useRef<number | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const onPlaySoundRef = useRef(onPlaySound);
+  onPlaySoundRef.current = onPlaySound;
 
   const hitZoneY = canvasHeight * 0.8;
 
@@ -78,7 +80,7 @@ export function useGameEngine({
         setGameState('results');
         stopRenderLoop();
       },
-      playSound: onPlaySound,
+      playSound: (note, velocity, duration, source) => onPlaySoundRef.current?.(note, velocity, duration, source),
     };
 
     const config = makeConfig();
