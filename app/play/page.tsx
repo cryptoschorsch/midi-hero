@@ -37,19 +37,17 @@ function PlayPageInner() {
   const [song, setSong] = useState<Song | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [containerSize, setContainerSize] = useState({ width: 1024, height: 600 });
+  const [containerWidth, setContainerWidth] = useState(1024);
+  const [gameAreaHeight, setGameAreaHeight] = useState(500);
   const [activeKeys, setActiveKeys] = useState<Set<number>>(new Set());
   const [expectedKeys, setExpectedKeys] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
 
   const { initAudio, playSound, changeInstrument, instrument: currentInstrument } = useAudio();
   const midi = useMidi();
 
   const KEYBOARD_VISUAL_HEIGHT = 80;
-  const PAD_VISUAL_HEIGHT = 80;
-  const SCORE_BAR_HEIGHT = 52;
-
-  const gameAreaHeight = containerSize.height - SCORE_BAR_HEIGHT - KEYBOARD_VISUAL_HEIGHT;
 
   const {
     gameState,
@@ -63,7 +61,7 @@ function PlayPageInner() {
     stopGame,
     handleMidiInput,
   } = useGameEngine({
-    canvasWidth: containerSize.width,
+    canvasWidth: containerWidth,
     canvasHeight: gameAreaHeight,
     difficulty,
     practiceSpeed: settings.practiceSpeed,
@@ -80,13 +78,23 @@ function PlayPageInner() {
     setSettings((s) => ({ ...s, scrollSpeed: DIFFICULTY_PRESETS[songDifficulty].scrollSpeed }));
   }, [songId]);
 
-  // Resize observer
+  // Container-Breite beobachten (für Keyboard-Visual-Breiten)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const obs = new ResizeObserver((entries) => {
-      const { width, height } = entries[0].contentRect;
-      setContainerSize({ width: Math.max(800, width), height: Math.max(400, height) });
+      setContainerWidth(Math.max(800, entries[0].contentRect.width));
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Spielbereich-Höhe direkt vom Div beobachten → Canvas passt immer exakt
+  useEffect(() => {
+    const el = gameAreaRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver((entries) => {
+      setGameAreaHeight(Math.max(300, entries[0].contentRect.height));
     });
     obs.observe(el);
     return () => obs.disconnect();
@@ -169,10 +177,10 @@ function PlayPageInner() {
       {/* Score bar */}
       <ScoreDisplay score={score} />
 
-      {/* Game area */}
-      <div className="relative flex-1" style={{ height: gameAreaHeight }}>
+      {/* Game area – flex-1 damit es genau den verbleibenden Platz füllt */}
+      <div className="relative flex-1" ref={gameAreaRef}>
         <GameCanvas
-          width={containerSize.width}
+          width={containerWidth}
           height={gameAreaHeight}
           activeNotes={activeNotes}
           hitEffects={hitEffects}
@@ -271,7 +279,7 @@ function PlayPageInner() {
       <div className="flex" style={{ height: KEYBOARD_VISUAL_HEIGHT }}>
         {song.mode !== 'pads' && (
           <KeyboardVisual
-            width={song.mode === 'mixed' ? containerSize.width * 0.65 : containerSize.width}
+            width={song.mode === 'mixed' ? containerWidth * 0.65 : containerWidth}
             height={KEYBOARD_VISUAL_HEIGHT}
             activeNotes={activeKeys}
             expectedNotes={keyboardExpected}
@@ -280,7 +288,7 @@ function PlayPageInner() {
         )}
         {song.mode !== 'keyboard' && (
           <PadVisual
-            width={song.mode === 'mixed' ? containerSize.width * 0.35 : containerSize.width}
+            width={song.mode === 'mixed' ? containerWidth * 0.35 : containerWidth}
             height={KEYBOARD_VISUAL_HEIGHT}
             activePads={activeKeys}
             expectedPads={padExpected}
