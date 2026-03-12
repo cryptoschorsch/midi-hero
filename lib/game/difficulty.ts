@@ -4,11 +4,11 @@ export const DIFFICULTY_PRESETS: Record<Difficulty, DifficultyPreset> = {
   beginner: {
     name: 'beginner',
     timingWindows: {
-      perfect: 60,   // ms (more forgiving)
-      great: 120,
-      good: 200,
+      perfect: 100,  // ms – sehr grosszügig für Einsteiger
+      great: 200,
+      good: 350,
     },
-    scrollSpeed: 200,
+    scrollSpeed: 150,  // deutlich langsamer
     noteOpacity: 1.0,
   },
   intermediate: {

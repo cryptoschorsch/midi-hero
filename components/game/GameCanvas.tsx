@@ -23,7 +23,7 @@ interface GameCanvasProps {
   scrollSpeed?: number;
 }
 
-const HIT_ZONE_Y_RATIO = 0.8;
+const HIT_ZONE_BOTTOM_OFFSET = 24; // px vom unteren Canvas-Rand
 const PERSPECTIVE_FACTOR = 0.6;
 
 export function GameCanvas({
@@ -44,7 +44,7 @@ export function GameCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const hitZoneY = height * HIT_ZONE_Y_RATIO;
+    const hitZoneY = height - HIT_ZONE_BOTTOM_OFFSET;
     const numKeyLanes = mode !== 'pads' ? MPK_MINI_KEYBOARD_RANGE : 0;
     const numPadLanes = mode !== 'keyboard' ? 8 : 0;
 

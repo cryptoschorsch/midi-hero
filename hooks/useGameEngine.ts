@@ -39,7 +39,7 @@ export function useGameEngine({
   const onPlaySoundRef = useRef(onPlaySound);
   onPlaySoundRef.current = onPlaySound;
 
-  const hitZoneY = canvasHeight * 0.8;
+  const hitZoneY = canvasHeight - 24;
 
   const makeConfig = useCallback((): HighwayConfig => ({
     canvasWidth,

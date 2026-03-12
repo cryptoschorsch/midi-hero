@@ -14,6 +14,7 @@ import { useMidi, useMidiNote } from '@/hooks/useMidi';
 import { useAudio } from '@/hooks/useAudio';
 import { BUILTIN_SONGS, getSongById } from '@/lib/songs/builtinSongs';
 import { MPK_MINI_KEYBOARD_BASE } from '@/lib/midi/midiMapping';
+import { DIFFICULTY_PRESETS } from '@/lib/game/difficulty';
 import type { Difficulty, Song, MidiNoteEvent, GameSettings } from '@/types';
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -34,7 +35,7 @@ function PlayPageInner() {
   const songId = searchParams.get('songId');
 
   const [song, setSong] = useState<Song | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>('intermediate');
+  const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [containerSize, setContainerSize] = useState({ width: 1024, height: 600 });
   const [activeKeys, setActiveKeys] = useState<Set<number>>(new Set());
@@ -67,17 +68,16 @@ function PlayPageInner() {
     difficulty,
     practiceSpeed: settings.practiceSpeed,
     settings,
-    onPlaySound: playSound,
+    // Sound wird direkt im MIDI-Handler gespielt, nicht über die Engine
   });
 
-  // Load song
+  // Load song and initialise difficulty + scrollSpeed from song metadata
   useEffect(() => {
-    if (songId) {
-      const found = getSongById(songId) ?? BUILTIN_SONGS[0];
-      setSong(found);
-    } else {
-      setSong(BUILTIN_SONGS[0]);
-    }
+    const found = (songId ? getSongById(songId) : null) ?? BUILTIN_SONGS[0];
+    setSong(found);
+    const songDifficulty = found.difficulty as Difficulty;
+    setDifficulty(songDifficulty);
+    setSettings((s) => ({ ...s, scrollSpeed: DIFFICULTY_PRESETS[songDifficulty].scrollSpeed }));
   }, [songId]);
 
   // Resize observer
@@ -92,11 +92,13 @@ function PlayPageInner() {
     return () => obs.disconnect();
   }, []);
 
-  // MIDI input → game engine + visual feedback
+  // MIDI input → sofort Sound + Game Engine + visuelles Feedback
   useMidiNote(
     useCallback((event: MidiNoteEvent) => {
       if (event.type === 'noteOn') {
         setActiveKeys((prev) => new Set([...prev, event.note]));
+        // Sound immer direkt spielen (unabhängig von Hit-Detection)
+        playSound(event.note, event.velocity, 0.3, event.source);
         if (gameState === 'playing') {
           handleMidiInput(event);
         }
@@ -107,7 +109,7 @@ function PlayPageInner() {
           return next;
         });
       }
-    }, [gameState, handleMidiInput]),
+    }, [gameState, handleMidiInput, playSound]),
     true
   );
 
@@ -205,7 +207,10 @@ function PlayPageInner() {
               <div className="space-y-4">
                 <div>
                   <div className="text-xs text-white/40 font-mono uppercase tracking-widest mb-2">Difficulty</div>
-                  <DifficultySelector value={difficulty} onChange={setDifficulty} />
+                  <DifficultySelector value={difficulty} onChange={(d) => {
+                    setDifficulty(d);
+                    setSettings((s) => ({ ...s, scrollSpeed: DIFFICULTY_PRESETS[d].scrollSpeed }));
+                  }} />
                 </div>
                 <div>
                   <div className="text-xs text-white/40 font-mono uppercase tracking-widest mb-2">Instrument</div>

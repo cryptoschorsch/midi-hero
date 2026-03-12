@@ -75,9 +75,10 @@ export class GameEngine {
     this.songTimeS = 0;
   }
 
-  start(): void {
+  start(startDelay = 2.0): void {
     this.isRunning = true;
     this.lastTimestamp = null;
+    this.songTimeS = -startDelay; // erste Noten erscheinen erst nach startDelay Sekunden
     this.rafId = requestAnimationFrame(this.tick.bind(this));
   }
 
